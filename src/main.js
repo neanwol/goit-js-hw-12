@@ -12,21 +12,17 @@ import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
 const searchForm = document.querySelector('.form');
+const loadMoreBtn = document.querySelector('.load-more');
 let currentPage;
 let currentQuery = '';
 const perPage = 15;
 let totalHits = 0;
-let totalPages = 0;
 
 searchForm.addEventListener('submit', handleSearchSubmit);
 
-
-document.addEventListener('DOMContentLoaded', () => {
-  const loadMoreBtn = document.querySelector('.load-more');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', handleLoadMore);
-  }
-});
+if (loadMoreBtn) {
+  loadMoreBtn.addEventListener('click', handleLoadMore);
+}
 
 async function handleSearchSubmit(event) {
   event.preventDefault();
@@ -43,16 +39,16 @@ async function handleSearchSubmit(event) {
     return;
   }
 
-
   clearGallery();
   currentPage = 1;
   currentQuery = searchQuery;
-  hideLoadMoreButton(); 
+  hideLoadMoreButton();
 
   showLoader();
-try {
-   const data = await getImagesByQuery(searchQuery, currentPage);
-    await handleSearchResponse(data); 
+  
+  try {
+    const data = await getImagesByQuery(searchQuery, currentPage);
+    await handleSearchResponse(data);
   } catch (error) {
     handleError(error);
   } finally {
@@ -71,9 +67,11 @@ async function handleLoadMore() {
     const previousGalleryItemCount = document.querySelectorAll('.gallery-item').length;
       
     createGallery(data.hits);
+    
     smoothScrollToNewImages(previousGalleryItemCount);
     
     const maxPage = Math.ceil(totalHits / perPage);
+
 
     if (currentPage < maxPage) {
       showLoadMoreButton();
@@ -89,7 +87,6 @@ async function handleLoadMore() {
     console.error("Error loading more images:", error);
     currentPage--; 
     
-
     if (currentPage >= 1) {
       showLoadMoreButton();
     }
@@ -104,11 +101,10 @@ async function handleLoadMore() {
   }
 }
 
-
 function handleSearchResponse(data) {
   const images = data.hits;
   totalHits = data.totalHits;
-  totalPages = Math.ceil(data.totalHits / perPage); 
+  const totalPages = Math.ceil(data.totalHits / perPage);
 
   if (images.length === 0) {
     iziToast.error({
@@ -122,11 +118,19 @@ function handleSearchResponse(data) {
 
   createGallery(images);
 
-  if (totalPages > perPage) {
-    showLoadMoreButton(); 
+  if (currentPage < totalPages) {
+    showLoadMoreButton();
+  } else {
+    hideLoadMoreButton();
+
+    iziToast.info({
+      title: 'Info',
+      message: "All search results have been loaded.",
+      position: 'topRight',
+    });
   }
 
-   iziToast.success({
+  iziToast.success({
     title: 'Success',
     message: `Hooray! We found ${totalHits} images.`,
     position: 'topRight',
