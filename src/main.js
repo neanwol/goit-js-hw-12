@@ -6,14 +6,13 @@ import {
   hideLoader,
   showLoadMoreButton,
   hideLoadMoreButton,
-  smoothScrollToNewImages,
 } from './js/render-functions.js';
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
 const searchForm = document.querySelector('.form');
 const loadMoreBtn = document.querySelector('.load-more');
-let currentPage;
+let currentPage = 1;
 let currentQuery = '';
 const perPage = 15;
 let totalHits = 0;
@@ -63,15 +62,16 @@ async function handleLoadMore() {
     hideLoadMoreButton();
 
     const data = await getImagesByQuery(currentQuery, currentPage);
-      
-    const previousGalleryItemCount = document.querySelectorAll('.gallery-item').length;
-      
+    const previousImageCount = document.querySelectorAll('.gallery-item').length;
+    
     createGallery(data.hits);
     
-    smoothScrollToNewImages(previousGalleryItemCount);
+    smoothScroll(previousImageCount);
+    if (data.totalHits) {
+      totalHits = data.totalHits;
+    }
     
     const maxPage = Math.ceil(totalHits / perPage);
-
 
     if (currentPage < maxPage) {
       showLoadMoreButton();
@@ -85,7 +85,7 @@ async function handleLoadMore() {
     }
   } catch (error) {
     console.error("Error loading more images:", error);
-    currentPage--; 
+    currentPage--;
     
     if (currentPage >= 1) {
       showLoadMoreButton();
@@ -104,7 +104,7 @@ async function handleLoadMore() {
 function handleSearchResponse(data) {
   const images = data.hits;
   totalHits = data.totalHits;
-  const totalPages = Math.ceil(data.totalHits / perPage);
+  const totalPages = Math.ceil(totalHits / perPage);
 
   if (images.length === 0) {
     iziToast.error({
@@ -122,12 +122,13 @@ function handleSearchResponse(data) {
     showLoadMoreButton();
   } else {
     hideLoadMoreButton();
-
-    iziToast.info({
-      title: 'Info',
-      message: "All search results have been loaded.",
-      position: 'topRight',
-    });
+    if (images.length > 0) {
+      iziToast.info({
+        title: 'Info',
+        message: "All search results have been loaded.",
+        position: 'topRight',
+      });
+    }
   }
 
   iziToast.success({
@@ -144,5 +145,22 @@ function handleError(error) {
     title: 'Error',
     message: 'Something went wrong. Please try again later!',
     position: 'topRight',
+  });
+}
+
+
+function smoothScroll(previousCount) {
+  const galleryItems = document.querySelectorAll('.gallery-item');
+  if (galleryItems.length <= previousCount) return;
+  
+  const newItems = Array.from(galleryItems).slice(previousCount);
+  if (newItems.length === 0) return;
+  
+  const firstNewItem = newItems[0];
+  const cardHeight = firstNewItem.getBoundingClientRect().height;
+  
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
   });
 }

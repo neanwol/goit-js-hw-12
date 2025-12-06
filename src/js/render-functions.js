@@ -98,15 +98,3 @@ export function hideLoadMoreButton() {
     loadMoreBtn.classList.add('hidden');
   }
 }
-
-export function smoothScrollToNewImages() {
-  const galleryContainer = document.querySelector('.gallery');
-  if (!galleryContainer || galleryContainer.children.length === 0) return;
-  
-  const cardHeight = galleryContainer.firstElementChild.getBoundingClientRect().height;
-  
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
-}
